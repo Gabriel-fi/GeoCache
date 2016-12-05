@@ -1,5 +1,4 @@
 /******************************************************************************
-//TESTING COMMIT!!!
 GeoCache Hunt Project (GeoCache.cpp)
 
 This is skeleton code provided as a project development guideline only.  You
