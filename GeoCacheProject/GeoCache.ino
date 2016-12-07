@@ -97,7 +97,7 @@ char cstr[GPS_RX_BUFSIZ];
 uint8_t target = 0;		// target number
 float heading = 0.0;	// target heading
 float distance = 0.0;	// target distance
-uint32_t timestamp_Button = 0; //Calc Button per sec
+uint32_t timestamp = 0;
 char* Buffer;
 char* latitude;
 char* N_S_indicator;
@@ -120,6 +120,9 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(40, NEO_TX, NEO_GRB + NEO_KHZ800);
 
 #if SDC_ON
 #include <SD.h>
+//-->TJay
+File ourFIle; //Variable to access the file for the SD Card
+
 #endif
 
 /*
@@ -428,6 +431,8 @@ void setup(void)
 	sequential number of the file.  The filename can not be more than 8
 	chars in length (excluding the ".txt").
 	*/
+	SD.begin();
+	ourFIle = SD.open("MyMap00.txt", FILE_WRITE);
 #endif
 
 #if GPS_ON
@@ -606,7 +611,15 @@ void changeFlag(uint16_t flag, uint8_t wait)
 void loop(void)
 {
 	// if button pressed, set new target
-	
+	if (analogRead(2) == 0 && timestamp < millis())
+	{
+		if (target < 4)
+			target++;
+		else
+			target = 0;
+
+		timestamp = millis() + 1000;
+	}
 	// returns with message once a second
 	getGPSMessage();
 
@@ -648,11 +661,20 @@ void loop(void)
 		//Gabe - Check if there is a need for a while(Buffer != NULL) to fully read the message
 
 		// calculated destination heading
-		calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
 		// calculated destination distance
-		calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
+		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
 #if SDC_ON
 		// write current position to SecureDigital then flush
+		//ourFIle.write('T');
+		ourFIle.print(latitude);
+		ourFIle.print(",");
+		ourFIle.print(longitude);
+		ourFIle.print(",");
+		ourFIle.print(heading);
+		ourFIle.print(".");
+		ourFIle.print(distance);
+		ourFIle.flush();
 #endif
 
 		break;
