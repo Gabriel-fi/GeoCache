@@ -97,6 +97,7 @@ char cstr[GPS_RX_BUFSIZ];
 uint8_t target = 0;		// target number
 float heading = 0.0;	// target heading
 float distance = 0.0;	// target distance
+int timestamp = 0;
 
 #if GPS_ON
 #include <SoftwareSerial.h>
@@ -597,7 +598,15 @@ void changeFlag(uint16_t flag, uint8_t wait)
 void loop(void)
 {
 	// if button pressed, set new target
+	if (analogRead(2) == 0 && timestamp < millis())
+	{
+		if (target < 4)
+			target++;
+		else
+			target = 0;
 
+		timestamp = millis() + 1000;
+	}
 	// returns with message once a second
 	getGPSMessage();
 
@@ -607,8 +616,10 @@ void loop(void)
 		// parse message parameters
 
 		// calculated destination heading
+		//calcBearing();
 
 		// calculated destination distance
+		//calcDistance();
 
 #if SDC_ON
 		// write current position to SecureDigital then flush
