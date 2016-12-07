@@ -79,7 +79,7 @@ Hunt.
 
 //-TJay- I changed these just to test my display, 1 = on, 0 = off
 #define NEO_ON 1		// NeoPixelShield
-#define TRM_ON 0		// SerialTerminal
+#define TRM_ON 1		// SerialTerminal
 #define SDC_ON 0		// SecureDigital
 #define GPS_ON 0		// Live GPS Message (off = simulated)
 #define BrightnessPin A0
@@ -97,15 +97,16 @@ char cstr[GPS_RX_BUFSIZ];
 uint8_t target = 0;		// target number
 float heading = 0.0;	// target heading
 float distance = 0.0;	// target distance
-uint32_t timestamp = 0;
-char* Buffer;
-char* latitude;
-char* N_S_indicator;
-char* longitude;
-char* E_W_indicator;
-char* courseOverGround;
-float FSLive_lat = 28.595763f;
-float FSLive_long = -81.304381f;
+
+struct targetInfo
+{
+	char* targetNS_indicator;
+	char* targetEW_indicator;
+	char* targetLat;
+	char* targetLong;
+};
+//Array of our targets
+targetInfo targetArr[4];
 
 #if GPS_ON
 #include <SoftwareSerial.h>
@@ -222,7 +223,7 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
-	float distance = 0.0;
+	float dist = 0.0;
 	// add code here
 	float distance2 = 0.0;
 	float diflat = 0.0;
@@ -234,16 +235,16 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 	flat2 = radians(flat2);
 	diflon = radians(flon2 - flon1);
 
-	distance = (sin(diflat / 2.0) * sin(diflat / 2.0));
+	dist = (sin(diflat / 2.0) * sin(diflat / 2.0));
 	distance2 = cos(flat1);
 	distance2 *= cos(flat2);
 	distance2 *= sin(diflon / 2.0);
 	distance2 *= sin(diflon / 2.0);
-	distance += distance2;
+	dist += distance2;
 
-	distance = (2 * atan2(sqrt(distance), sqrt(1.0 - distance)));
+	dist = (2 * atan2(sqrt(dist), sqrt(1.0 - dist)));
 
-	return(distance);
+	return(dist);
 }
 
 /**************************************************
@@ -293,7 +294,7 @@ void setNeoPixel(void)
 {
 	UpdateCompass(heading, 100);
 	UpdateDistance(distance, 100);
-	changeFlag(target, 100);
+	changeFlag(target, 0);
 }
 
 #endif	// NEO_ON
@@ -412,6 +413,7 @@ void getGPSMessage(void)
 
 void setup(void)
 {
+
 #if TRM_ON
 	// init serial interface
 	Serial.begin(115200);
@@ -419,6 +421,7 @@ void setup(void)
 
 #if NEO_ON
 	// init NeoPixel Shield
+	pinMode(2, INPUT_PULLUP);
 	pinMode(BrightnessPin, INPUT);
 	strip.begin();
 	strip.show(); // Initialize all pixels to 'off'
@@ -444,6 +447,17 @@ void setup(void)
 #endif		
 
 	// init target button here
+
+	//Gabe -> Vars for target pointers
+	char trueNorth = 'N';
+	char trueWest = 'W';
+	char tarLat[11] = { 2,8,'.',5,7,3,7,7,8 };
+	char tarLong[11] = { 8,1,'.',3,0,5,3,5,6 };
+	//Gabe -> SetUp targets here
+	targetArr[0].targetNS_indicator = &trueNorth;
+	targetArr[0].targetEW_indicator = &trueWest;
+	targetArr[0].targetLat = tarLat;
+	targetArr[0].targetLong = tarLong;
 }
 
 
@@ -610,15 +624,15 @@ void changeFlag(uint16_t flag, uint8_t wait)
 #endif
 void loop(void)
 {
+
 	// if button pressed, set new target
-	if (analogRead(2) == 0 && timestamp < millis())
+	if (digitalRead(2) == 0/* && timestamp < millis()*/)
 	{
 		if (target < 4)
 			target++;
 		else
 			target = 0;
-
-		timestamp = millis() + 1000;
+		//timestamp = millis() + 200;
 	}
 	// returns with message once a second
 	getGPSMessage();
@@ -627,25 +641,14 @@ void loop(void)
 	while (cstr[3] == 'R')
 	{
 		// parse message parameters
-	/*
-		"$GPRMC,064951.000,A,2307.1256,N,12016.4438,E,0.03,165.48,260406,3.05,W,A*2C/r/n"
+		Serial.println(cstr);
+		static char * Buffer = new char[7];
+		static char * latitude = new char[11];
+		static char * longitude = new char[11];
+		static char * N_S_indicator = new char[2];
+		static char * E_W_indicator = new char[2];
+		static char * courseOverGround = new char[7];
 
-			$GPRMC,         // GPRMC Message
-			064951.000,     // utc time hhmmss.sss
-			A,              // status A=data valid or V=data not valid
-			2307.1256,      // Latitude 2307.1256 (degrees minutes format dddmm.mmmm)
-			N,              // N/S Indicator N=north or S=south
-			12016.4438,     // Longitude 12016.4438 (degrees minutes format dddmm.mmmm)
-			E,              // E/W Indicator E=east or W=west
-			0.03,           // Speed over ground knots
-			165.48,         // Course over ground (decimal degrees format ddd.dd)
-			260406,         // date ddmmyy
-			3.05,           // Magnetic variation (decimal degrees format ddd.dd)
-			W,              // E=east or W=west
-			A               // Mode A=Autonomous D=differential E=Estimated
-			* 2C            // checksum
-			/ r / n         // return and newline
-	*/
 		Buffer = new char[7];
 		latitude = new char[11];
 		longitude = new char[11];
@@ -665,12 +668,14 @@ void loop(void)
 			Buffer = strtok(NULL, ",");
 			courseOverGround = strtok(NULL, ",");
 		}
-		//Gabe - Check if there is a need for a while(Buffer != NULL) to fully read the message
-
+		
 		// calculated destination heading
-		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), degMin2DecDeg(targetArr[0].targetNS_indicator,
+			targetArr[0].targetLat), degMin2DecDeg(targetArr[0].targetEW_indicator, targetArr[0].targetLong));
 		// calculated destination distance
-		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
+		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), degMin2DecDeg(targetArr[0].targetNS_indicator,
+			targetArr[0].targetLat), degMin2DecDeg(targetArr[0].targetEW_indicator, targetArr[0].targetLong));
+
 #if SDC_ON
 		// write current position to SecureDigital then flush
 		//ourFIle.write('T');
@@ -680,7 +685,7 @@ void loop(void)
 		ourFIle.print(",");
 		ourFIle.print(heading);
 		ourFIle.print(".");
-		ourFIle.print(distance);
+		ourFIle.println(distance);
 		ourFIle.flush();
 #endif
 
@@ -697,15 +702,5 @@ void loop(void)
 #if TRM_ON
 	// print debug information to Serial Terminal
 	Serial.println(cstr);
-#endif		
-
-
-	//Deleting heap memory
-	delete[] Buffer;
-	delete[] longitude;
-	delete[] latitude;
-	delete[] N_S_indicator;
-	delete[] E_W_indicator;
-	delete[] courseOverGround;
-
+#endif	
 }
