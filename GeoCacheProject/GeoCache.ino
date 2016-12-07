@@ -80,8 +80,8 @@ Hunt.
 //-TJay- I changed these just to test my display, 1 = on, 0 = off
 #define NEO_ON 1		// NeoPixelShield
 #define TRM_ON 0		// SerialTerminal
-#define SDC_ON 0		// SecureDigital
-#define GPS_ON 0		// Live GPS Message (off = simulated)
+#define SDC_ON 1		// SecureDigital
+#define GPS_ON 1		// Live GPS Message (off = simulated)
 #define BrightnessPin A0
 
 // define pin usage
@@ -97,13 +97,12 @@ char cstr[GPS_RX_BUFSIZ];
 uint8_t target = 0;		// target number
 float heading = 0.0;	// target heading
 float distance = 0.0;	// target distance
-uint32_t timestamp = 0;
-char* Buffer;
-char* latitude;
-char* N_S_indicator;
-char* longitude;
-char* E_W_indicator;
-char* courseOverGround;
+//char* Buffer;
+//char* latitude;
+//char* N_S_indicator;
+//char* longitude;
+//char* E_W_indicator;
+//char* courseOverGround;
 float FSLive_lat = 28.595763f;
 float FSLive_long = -81.304381f;
 
@@ -222,7 +221,7 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
-	float distance = 0.0;
+	float dist = 0.0;
 	// add code here
 	float distance2 = 0.0;
 	float diflat = 0.0;
@@ -234,16 +233,16 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 	flat2 = radians(flat2);
 	diflon = radians(flon2 - flon1);
 
-	distance = (sin(diflat / 2.0) * sin(diflat / 2.0));
+	dist = (sin(diflat / 2.0) * sin(diflat / 2.0));
 	distance2 = cos(flat1);
 	distance2 *= cos(flat2);
 	distance2 *= sin(diflon / 2.0);
 	distance2 *= sin(diflon / 2.0);
-	distance += distance2;
+	dist += distance2;
 
-	distance = (2 * atan2(sqrt(distance), sqrt(1.0 - distance)));
+	dist = (2 * atan2(sqrt(dist), sqrt(1.0 - dist)));
 
-	return(distance);
+	return(dist);
 }
 
 /**************************************************
@@ -293,7 +292,7 @@ void setNeoPixel(void)
 {
 	UpdateCompass(heading, 100);
 	UpdateDistance(distance, 100);
-	changeFlag(target, 100);
+	changeFlag(target, 0);
 }
 
 #endif	// NEO_ON
@@ -412,6 +411,7 @@ void getGPSMessage(void)
 
 void setup(void)
 {
+
 #if TRM_ON
 	// init serial interface
 	Serial.begin(115200);
@@ -419,6 +419,7 @@ void setup(void)
 
 #if NEO_ON
 	// init NeoPixel Shield
+	pinMode(2, INPUT_PULLUP);
 	pinMode(BrightnessPin, INPUT);
 	strip.begin();
 	strip.show(); // Initialize all pixels to 'off'
@@ -610,15 +611,16 @@ void changeFlag(uint16_t flag, uint8_t wait)
 #endif
 void loop(void)
 {
+	//static uint32_t timestamp = 0;
+
 	// if button pressed, set new target
-	if (analogRead(2) == 0 && timestamp < millis())
+	if (digitalRead(2) == 0/* && timestamp < millis()*/)
 	{
 		if (target < 4)
 			target++;
 		else
 			target = 0;
-
-		timestamp = millis() + 1000;
+		//timestamp = millis() + 200;
 	}
 	// returns with message once a second
 	getGPSMessage();
@@ -646,6 +648,14 @@ void loop(void)
 			* 2C            // checksum
 			/ r / n         // return and newline
 	*/
+		Serial.println(cstr);
+		static char * Buffer = new char[7];
+		static char * latitude = new char[11];
+		static char * longitude = new char[11];
+		static char * N_S_indicator = new char[2];
+		static char * E_W_indicator = new char[2];
+		static char * courseOverGround = new char[7];
+
 		Buffer = strtok(cstr, ",");
 		Buffer = strtok(NULL, ",");
 		Buffer = strtok(NULL, ",");
@@ -658,6 +668,12 @@ void loop(void)
 			Buffer = strtok(NULL, ",");
 			courseOverGround = strtok(NULL, ",");
 		}
+		////Gabe - Check if there is a need for a while(Buffer != NULL) to fully read the message
+
+		//// calculated destination heading
+		//heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
+		//// calculated destination distance
+		//distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
 		//Gabe - Check if there is a need for a while(Buffer != NULL) to fully read the message
 
 		// calculated destination heading
@@ -673,9 +689,10 @@ void loop(void)
 		ourFIle.print(",");
 		ourFIle.print(heading);
 		ourFIle.print(".");
-		ourFIle.print(distance);
+		ourFIle.println(distance);
 		ourFIle.flush();
 #endif
+		//Deleting heap memory
 
 		break;
 	}
@@ -690,5 +707,7 @@ void loop(void)
 #if TRM_ON
 	// print debug information to Serial Terminal
 	Serial.println(cstr);
-#endif		
+#endif	
+
+
 }
