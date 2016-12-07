@@ -7,9 +7,9 @@ your project however you wish.
 
 List Team Members Here:
 
-1. Gabe
+1. Gabriel
 2. Oleh
-3. TJ
+3. TJay
 4.
 
 NOTES:
