@@ -98,6 +98,7 @@ float distance = 0.0;	// target distance
 #if GPS_ON
 #include <SoftwareSerial.h>
 SoftwareSerial gps(GPS_RX, GPS_TX);
+
 #endif
 
 #if NEO_ON
@@ -164,6 +165,27 @@ float degMin2DecDeg(char *cind, char *ccor)
 	float degrees = 0.0;
 
 	// add code here
+	String degree;
+	String minute;
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		degree += ccor[i];
+	}
+
+	for (size_t i = 3; i < 10; i++)
+	{
+		minute += ccor[i];
+	}
+
+	float min = atof(minute.c_str()) / 60;
+	float deg = atof(degree.c_str());
+
+	if (cind == "S" || cind == "W")
+		degrees = (deg + min) * -1;
+	else
+		degrees = (deg + min) * 1;
+	
 
 	return(degrees);
 }
@@ -186,8 +208,25 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
 	float distance = 0.0;
-
 	// add code here
+	float distance2 = 0.0;
+	float diflat = 0.0;
+	float diflon = 0.0;
+
+	//Calculations
+	diflat = radians(flat2 - flat1);
+	flat1 = radians(flat1);
+	flat2 = radians(flat2);
+	diflon = radians(flon2 - flon1);
+
+	distance = (sin(diflat / 2.0) * sin(diflat / 2.0));
+	distance2 = cos(flat1);
+	distance2 *= cos(flat2);
+	distance2 *= sin(diflon / 2.0);
+	distance2 *= sin(diflon / 2.0);
+	distance += distance2;
+
+	distance = (2 * atan2(sqrt(distance), sqrt(1.0 - distance)));
 
 	return(distance);
 }
@@ -207,8 +246,17 @@ angle in degrees from magnetic north
 float calcBearing(float flat1, float flon1, float flat2, float flon2)
 {
 	float bearing = 0.0;
-
 	// add code here
+	float calc = 0.0;
+
+	float x = 69.1 * (flat2 - flat1);
+	float y = 69.1 * (flon2 - flon1) * cos(flat1 / 57.3);
+
+	calc = atan2(y, x);
+	bearing = degrees(calc);
+
+	if (bearing <= 1)
+		bearing = 360 + bearing;
 
 	return(bearing);
 }
@@ -354,6 +402,7 @@ void setup(void)
 
 #if NEO_ON
 	// init NeoPixel Shield
+	
 #endif	
 
 #if SDC_ON
