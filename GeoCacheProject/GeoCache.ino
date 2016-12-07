@@ -97,6 +97,15 @@ char cstr[GPS_RX_BUFSIZ];
 uint8_t target = 0;		// target number
 float heading = 0.0;	// target heading
 float distance = 0.0;	// target distance
+uint32_t timestamp_Button = 0; //Calc Button per sec
+char* Buffer;
+char* latitude;
+char* N_S_indicator;
+char* longitude;
+char* E_W_indicator;
+char* courseOverGround;
+float FSLive_lat = 28.595763f;
+float FSLive_long = -81.304381f;
 
 #if GPS_ON
 #include <SoftwareSerial.h>
@@ -439,7 +448,7 @@ void setup(void)
 
 #if NEO_ON
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//UpdateCompass();
+//UpdateCompass() --> TJay
 //Takes in a degree and wait time. It uses that degree to update which light on the "Compass" to turn red. A.K.A Point us in the right direction;
 //Wait time is irrelevant currently, May take out in future;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -490,7 +499,7 @@ void UpdateCompass(uint32_t degree, uint8_t wait)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//UpdateDistance();
+//UpdateDistance() --> TJay
 //Takes in a distance and wait time. It uses that distance to update the 31 lights that represent how close or far we are from the target;
 //If we are more than 80 feet away, a yellow light will be displayed for every 80 feet.
 //However if we are less than 80 feet away, a green light will be displayed for every 2.5 feet we are away from the target. 
@@ -561,7 +570,7 @@ void UpdateDistance(uint32_t distance, uint8_t wait)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//UpdateFlag();
+//UpdateFlag() --> TJay
 //Takes in a flag and wait time. Flag represents a number from 0-3, which referes to 1 of the four flags we are looking for;
 //This function updates color of the target flag whch is located in the middle of the compass
 //Wait time is irrelevant currently, May take out in future;
@@ -597,7 +606,7 @@ void changeFlag(uint16_t flag, uint8_t wait)
 void loop(void)
 {
 	// if button pressed, set new target
-
+	
 	// returns with message once a second
 	getGPSMessage();
 
@@ -605,11 +614,43 @@ void loop(void)
 	while (cstr[3] == 'R')
 	{
 		// parse message parameters
+	/*
+		"$GPRMC,064951.000,A,2307.1256,N,12016.4438,E,0.03,165.48,260406,3.05,W,A*2C/r/n"
+
+			$GPRMC,         // GPRMC Message
+			064951.000,     // utc time hhmmss.sss
+			A,              // status A=data valid or V=data not valid
+			2307.1256,      // Latitude 2307.1256 (degrees minutes format dddmm.mmmm)
+			N,              // N/S Indicator N=north or S=south
+			12016.4438,     // Longitude 12016.4438 (degrees minutes format dddmm.mmmm)
+			E,              // E/W Indicator E=east or W=west
+			0.03,           // Speed over ground knots
+			165.48,         // Course over ground (decimal degrees format ddd.dd)
+			260406,         // date ddmmyy
+			3.05,           // Magnetic variation (decimal degrees format ddd.dd)
+			W,              // E=east or W=west
+			A               // Mode A=Autonomous D=differential E=Estimated
+			* 2C            // checksum
+			/ r / n         // return and newline
+	*/
+		Buffer = strtok(cstr, ",");
+		Buffer = strtok(NULL, ",");
+		Buffer = strtok(NULL, ",");
+		if (*Buffer == 'A')
+		{
+			latitude = strtok(NULL, ",");
+			N_S_indicator = strtok(NULL, ",");
+			longitude = strtok(NULL, ",");
+			E_W_indicator = strtok(NULL, ",");
+			Buffer = strtok(NULL, ",");
+			courseOverGround = strtok(NULL, ",");
+		}
+		//Gabe - Check if there is a need for a while(Buffer != NULL) to fully read the message
 
 		// calculated destination heading
-
+		calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
 		// calculated destination distance
-
+		calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), FSLive_lat, FSLive_long);
 #if SDC_ON
 		// write current position to SecureDigital then flush
 #endif
