@@ -646,6 +646,13 @@ void loop(void)
 			* 2C            // checksum
 			/ r / n         // return and newline
 	*/
+		Buffer = new char[7];
+		latitude = new char[11];
+		longitude = new char[11];
+		N_S_indicator = new char[2];
+		E_W_indicator = new char[2];
+		courseOverGround = new char[7];
+
 		Buffer = strtok(cstr, ",");
 		Buffer = strtok(NULL, ",");
 		Buffer = strtok(NULL, ",");
@@ -691,4 +698,14 @@ void loop(void)
 	// print debug information to Serial Terminal
 	Serial.println(cstr);
 #endif		
+
+
+	//Deleting heap memory
+	delete[] Buffer;
+	delete[] longitude;
+	delete[] latitude;
+	delete[] N_S_indicator;
+	delete[] E_W_indicator;
+	delete[] courseOverGround;
+
 }
