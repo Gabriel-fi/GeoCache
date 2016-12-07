@@ -76,10 +76,13 @@ all these libraries at the same time.  You are only permitted to
 have NEO_ON, GPS_ON and SDC_ON during the actual GeoCache Flag
 Hunt.
 */
-#define NEO_ON 0		// NeoPixelShield
-#define TRM_ON 1		// SerialTerminal
+
+//-TJay- I changed these just to test my display, 1 = on, 0 = off
+#define NEO_ON 1		// NeoPixelShield
+#define TRM_ON 0		// SerialTerminal
 #define SDC_ON 0		// SecureDigital
-#define GPS_ON 1		// Live GPS Message (off = simulated)
+#define GPS_ON 0		// Live GPS Message (off = simulated)
+#define BrightnessPin A0
 
 // define pin usage
 #define NEO_TX	6		// NEO transmit
@@ -276,7 +279,9 @@ parameters are in global data space.
 */
 void setNeoPixel(void)
 {
-	// add code here
+	UpdateCompass(heading, 100);
+	UpdateDistance(distance, 100);
+	changeFlag(target, 100);
 }
 
 #endif	// NEO_ON
@@ -402,7 +407,9 @@ void setup(void)
 
 #if NEO_ON
 	// init NeoPixel Shield
-	
+	pinMode(BrightnessPin, INPUT);
+	strip.begin();
+	strip.show(); // Initialize all pixels to 'off'
 #endif	
 
 #if SDC_ON
@@ -425,6 +432,168 @@ void setup(void)
 	// init target button here
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// TJay's Code for Displaying data to neopixel
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if NEO_ON
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//UpdateCompass();
+//Takes in a degree and wait time. It uses that degree to update which light on the "Compass" to turn red. A.K.A Point us in the right direction;
+//Wait time is irrelevant currently, May take out in future;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdateCompass(uint32_t degree, uint8_t wait)
+{
+	//Make  a certain Light red based on degree
+	if (degree > 337 || degree < 23)
+		strip.setPixelColor(22, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(22, strip.Color(0, 0, 255));
+
+	if (degree > 22 && degree < 68)
+		strip.setPixelColor(23, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(23, strip.Color(0, 0, 255));
+
+	if (degree > 67 && degree < 113)
+		strip.setPixelColor(31, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(31, strip.Color(0, 0, 255));
+
+	if (degree > 112 && degree < 158)
+		strip.setPixelColor(39, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(39, strip.Color(0, 0, 255));
+
+	if (degree > 157 && degree < 203)
+		strip.setPixelColor(38, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(38, strip.Color(0, 0, 255));
+
+	if (degree > 202 && degree < 248)
+		strip.setPixelColor(37, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(37, strip.Color(0, 0, 255));
+
+	if (degree > 247 && degree < 293)
+		strip.setPixelColor(29, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(29, strip.Color(0, 0, 255));
+
+	if (degree > 292 && degree < 338)
+		strip.setPixelColor(21, strip.Color(255, 0, 0));
+	else
+		strip.setPixelColor(21, strip.Color(0, 0, 255));
+	strip.show();
+	delay(wait * 2);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//UpdateDistance();
+//Takes in a distance and wait time. It uses that distance to update the 31 lights that represent how close or far we are from the target;
+//If we are more than 80 feet away, a yellow light will be displayed for every 80 feet.
+//However if we are less than 80 feet away, a green light will be displayed for every 2.5 feet we are away from the target. 
+//Wait time is irrelevant currently, May take out in future
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void UpdateDistance(uint32_t distance, uint8_t wait)
+{
+	//If distance is greater than 80ft, light up a yellow light per 80ft
+	if (distance > 80)
+	{
+		for (uint16_t i = 0; i < 31; i++) {
+			{
+				if (distance > i * 80)
+				{
+
+					if (i < 21)
+						strip.setPixelColor(i, strip.Color(255, 255, 0));
+					else if (i >= 21 && i + 3 < 29)
+						strip.setPixelColor(i + 3, strip.Color(255, 255, 0));
+					else if (i + 3 >= 29 && i + 6 < 40)
+						strip.setPixelColor(i + 6, strip.Color(255, 255, 0));
+
+				}
+				else
+				{
+					if (i < 21)
+						strip.setPixelColor(i, strip.Color(0, 0, 0));
+					else if (i >= 21 && i + 3 < 29)
+						strip.setPixelColor(i + 3, strip.Color(0, 0, 0));
+					else if (i + 3 >= 29 && i + 6 < 40)
+						strip.setPixelColor(i + 6, strip.Color(0, 0, 0));
+				}
+
+			}
+		}
+	}
+	else // otherwise light up a green light every 2.5 ft
+	{
+		for (uint16_t i = 0; i < 31; i++) {
+			{
+				if (distance > i * 2.5f)
+				{
+
+					if (i < 21)
+						strip.setPixelColor(i, strip.Color(0, 255, 0));
+					else if (i >= 21 && i + 3 < 29)
+						strip.setPixelColor(i + 3, strip.Color(0, 255, 0));
+					else if (i + 3 >= 29 && i + 6 < 40)
+						strip.setPixelColor(i + 6, strip.Color(0, 255, 0));
+
+				}
+				else
+				{
+					if (i < 21)
+						strip.setPixelColor(i, strip.Color(0, 0, 0));
+					else if (i >= 21 && i + 3 < 29)
+						strip.setPixelColor(i + 3, strip.Color(0, 0, 0));
+					else if (i + 3 >= 29 && i + 6 < 40)
+						strip.setPixelColor(i + 6, strip.Color(0, 0, 0));
+				}
+
+			}
+		}
+	}
+	strip.show();
+	delay(wait * 2);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//UpdateFlag();
+//Takes in a flag and wait time. Flag represents a number from 0-3, which referes to 1 of the four flags we are looking for;
+//This function updates color of the target flag whch is located in the middle of the compass
+//Wait time is irrelevant currently, May take out in future;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void changeFlag(uint16_t flag, uint8_t wait)
+{
+	if (flag == 0)
+	{
+
+		strip.setPixelColor(30, strip.Color(255, 0, 255));
+	}
+	else 	if (flag == 1)
+	{
+
+		strip.setPixelColor(30, strip.Color(0, 255, 255));
+	}
+	else 	if (flag == 2)
+	{
+
+		strip.setPixelColor(30, strip.Color(250, 200, 10));
+	}
+	else 	if (flag == 3)
+	{
+
+		strip.setPixelColor(30, strip.Color(127, 127, 127));
+	}
+
+	strip.show();
+	delay(wait * 2);
+}
+#endif
 void loop(void)
 {
 	// if button pressed, set new target
@@ -450,7 +619,9 @@ void loop(void)
 
 #if NEO_ON
 	// set NeoPixel target display
-	setNeoPixel(target, heading, distance);
+	strip.setBrightness(map(analogRead(BrightnessPin), 0, 1023, 0, 255));
+	setNeoPixel();
+
 #endif		
 
 #if TRM_ON
