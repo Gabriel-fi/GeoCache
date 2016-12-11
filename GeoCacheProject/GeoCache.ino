@@ -256,18 +256,23 @@ angle in degrees from magnetic north
 **************************************************/
 float calcBearing(float flat1, float flon1, float flat2, float flon2)
 {
-	float bearing = 0.0;
-	// add code here
-	float calc = 0.0;
+	float y = sin(flon2 - flon1)*cos(flat2);
+	float x = cos(flat1)*sin(flat2) - sin(flat1)*cos(flat2)*cos(flat2 - flat1);
 
-	float x = 69.1 * (flat2 - flat1);
-	float y = 69.1 * (flon2 - flon1) * cos(flat1 / 57.3);
+	float bearing = atan2(y, x) * 180 / PI;
 
-	calc = atan2(y, x);
-	bearing = degrees(calc);
+	//float bearing = 0.0;
+	//// add code here
+	//float calc = 0.0;
 
-	if (bearing <= 1)
-		bearing = 360 + bearing;
+	//float x = 69.1 * (flat2 - flat1);
+	//float y = 69.1 * (flon2 - flon1) * cos(flat1 / 57.3);
+
+	//calc = atan2(y, x);
+	//bearing = degrees(calc);
+
+	//if (bearing <= 1)
+	//	bearing = 360 + bearing;
 
 	return(bearing);
 }
