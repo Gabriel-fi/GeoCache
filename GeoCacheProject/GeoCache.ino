@@ -81,7 +81,7 @@ Hunt.
 #define NEO_ON 1		// NeoPixelShield
 #define TRM_ON 1		// SerialTerminal
 #define SDC_ON 0		// SecureDigital
-#define GPS_ON 0		// Live GPS Message (off = simulated)
+#define GPS_ON 1		// Live GPS Message (off = simulated)
 #define BrightnessPin A0
 
 // define pin usage
@@ -104,6 +104,8 @@ struct targetInfo
 	char* targetEW_indicator;
 	char* targetLat;
 	char* targetLong;
+	float LatDD;
+	float LongDD;
 };
 //Array of our targets
 targetInfo targetArr[4];
@@ -178,32 +180,25 @@ Decimal degrees coordinate.
 **************************************************/
 float degMin2DecDeg(char *cind, char *ccor)
 {
-	float degrees = 0.0;
+	float min = atof(ccor);
 
-	// add code here
-	String degree;
-	String minute;
+	//Initialize the location.
+	float f = min;
+	// Get the first two digits by turning f into an integer, then doing an integer divide by 100;
+	// firsttowdigits should be 77 at this point.
+	int DD = ((int)f) / 100; //This assumes that f < 10000.
+	float MMMM = f - (float)(DD * 100);
+	float theFinalAnswer = (float)(DD + MMMM / 60.0);
 
-	for (size_t i = 0; i < 3; i++)
-	{
-		degree += ccor[i];
-	}
-
-	for (size_t i = 3; i < 10; i++)
-	{
-		minute += ccor[i];
-	}
-
-	float min = atof(minute.c_str()) / 60;
-	float deg = atof(degree.c_str());
-
-	if (cind == "S" || cind == "W")
-		degrees = (deg + min) * -1;
-	else
-		degrees = (deg + min) * 1;
+	if (*cind == 'S' || *cind == 'W')
+		theFinalAnswer = theFinalAnswer * -1;
 	
+	//Serial.print("Conversion: ");
+	//Serial.print(DD);
+	//Serial.print(" | ");
+	//Serial.println(MMMM);
 
-	return(degrees);
+	return (theFinalAnswer);
 }
 
 /**************************************************
@@ -223,7 +218,32 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
+	/* OR
+	float radius = 6371;
+	float l1 = radians(flat1);
+	float l2 = radians(flat2);
+	float dlat = radians(flat2 - flat1);
+	float dlon = radians(flon2 - flon1);
+
+	float a = sin(dlat / 2) * sin(dlat / 2) + cos(l1) * cos(l2) * sin(dlon / 2) * sin(dlon / 2);
+	float c = 2 * atan2(sqrt(a), sqrt(1 - a));
+	float dist = radius * c;
+
+	return dist;*/
+
+
+	float dlon, dlat, a, c;
 	float dist = 0.0;
+	dlon = radians(flon2 - flon1);
+	dlat = radians(flat2 - flat1);
+	a = pow(sin(dlat / 2), 2) + cos(radians(flat1)) * cos(radians(flat2)) * pow(sin(dlon / 2), 2);
+	c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+	dist = 20925656.2 * c;  //radius of the earth (6378140 meters) in feet 20925656.2
+	
+	return((float)dist + 0.5);
+
+	/*float dist = 0.0;
 	// add code here
 	float distance2 = 0.0;
 	float diflat = 0.0;
@@ -244,7 +264,9 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 
 	dist = (2 * atan2(sqrt(dist), sqrt(1.0 - dist)));
 
-	return(dist);
+	Serial.println("Test");
+
+	return(dist);*/
 }
 
 /**************************************************
@@ -458,6 +480,10 @@ void setup(void)
 	targetArr[0].targetEW_indicator = &trueWest;
 	targetArr[0].targetLat = tarLat;
 	targetArr[0].targetLong = tarLong;
+
+	//Gabe -> TARGET FOR TESTING //28.573769, -81.305332
+	targetArr[0].LatDD = 28.596715f;
+	targetArr[0].LongDD = -81.304839f;
 }
 
 
@@ -641,7 +667,7 @@ void loop(void)
 	while (cstr[3] == 'R')
 	{
 		// parse message parameters
-		Serial.println(cstr);
+		//Serial.print(cstr);
 		static char * Buffer = new char[7];
 		static char * latitude = new char[11];
 		static char * longitude = new char[11];
@@ -670,11 +696,30 @@ void loop(void)
 		}
 		
 		// calculated destination heading
-		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), degMin2DecDeg(targetArr[0].targetNS_indicator,
-			targetArr[0].targetLat), degMin2DecDeg(targetArr[0].targetEW_indicator, targetArr[0].targetLong));
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD,targetArr[0].LongDD);
 		// calculated destination distance
-		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), degMin2DecDeg(targetArr[0].targetNS_indicator,
-			targetArr[0].targetLat), degMin2DecDeg(targetArr[0].targetEW_indicator, targetArr[0].targetLong));
+		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
+
+		/*Serial.print("CalcBearing(");
+		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
+		Serial.print(",");
+		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
+		Serial.print(",");
+		Serial.print(targetArr[0].LatDD);
+		Serial.print(",");
+		Serial.print(targetArr[0].LongDD);
+		Serial.println(")");
+		Serial.print("CalcDistance(");
+		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
+		Serial.print(",");
+		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
+		Serial.print(",");
+		Serial.print(targetArr[0].LatDD);
+		Serial.print(",");
+		Serial.print(targetArr[0].LongDD);
+		Serial.println(")");*/
+
+
 
 #if SDC_ON
 		// write current position to SecureDigital then flush
@@ -682,7 +727,7 @@ void loop(void)
 		ourFIle.print(latitude);
 		ourFIle.print(",");
 		ourFIle.print(longitude);
-		ourFIle.print(",");
+		ourFIle.print(",");rt
 		ourFIle.print(heading);
 		ourFIle.print(".");
 		ourFIle.println(distance);
@@ -701,6 +746,11 @@ void loop(void)
 
 #if TRM_ON
 	// print debug information to Serial Terminal
-	Serial.println(cstr);
+	//Serial.println(cstr);
+	/*Serial.print("Heading: ");
+	Serial.print(heading);
+	Serial.print(" | ");
+	Serial.print("Distance: ");
+	Serial.println(distance);*/
 #endif	
 }
