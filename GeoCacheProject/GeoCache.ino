@@ -218,7 +218,32 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
+	/* OR
+	float radius = 6371;
+	float l1 = radians(flat1);
+	float l2 = radians(flat2);
+	float dlat = radians(flat2 - flat1);
+	float dlon = radians(flon2 - flon1);
+
+	float a = sin(dlat / 2) * sin(dlat / 2) + cos(l1) * cos(l2) * sin(dlon / 2) * sin(dlon / 2);
+	float c = 2 * atan2(sqrt(a), sqrt(1 - a));
+	float dist = radius * c;
+
+	return dist;*/
+
+
+	float dlon, dlat, a, c;
 	float dist = 0.0;
+	dlon = radians(flon2 - flon1);
+	dlat = radians(flat2 - flat1);
+	a = pow(sin(dlat / 2), 2) + cos(radians(flat1)) * cos(radians(flat2)) * pow(sin(dlon / 2), 2);
+	c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+	dist = 20925656.2 * c;  //radius of the earth (6378140 meters) in feet 20925656.2
+	
+	return((float)dist + 0.5);
+
+	/*float dist = 0.0;
 	// add code here
 	float distance2 = 0.0;
 	float diflat = 0.0;
@@ -239,7 +264,9 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 
 	dist = (2 * atan2(sqrt(dist), sqrt(1.0 - dist)));
 
-	return(dist);
+	Serial.println("Test");
+
+	return(dist);*/
 }
 
 /**************************************************
@@ -459,7 +486,7 @@ void setup(void)
 	targetArr[0].targetLat = tarLat;
 	targetArr[0].targetLong = tarLong;
 
-	//Gabe -> TARGET FOR TESTING
+	//Gabe -> TARGET FOR TESTING //28.573769, -81.305332
 	targetArr[0].LatDD = 28.596715f;
 	targetArr[0].LongDD = -81.304839f;
 }
@@ -645,7 +672,7 @@ void loop(void)
 	while (cstr[3] == 'R')
 	{
 		// parse message parameters
-		Serial.print(cstr);
+		//Serial.print(cstr);
 		static char * Buffer = new char[7];
 		static char * latitude = new char[11];
 		static char * longitude = new char[11];
@@ -678,7 +705,7 @@ void loop(void)
 		// calculated destination distance
 		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
 
-		Serial.print("CalcBearing(");
+		/*Serial.print("CalcBearing(");
 		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
 		Serial.print(",");
 		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
@@ -695,7 +722,7 @@ void loop(void)
 		Serial.print(targetArr[0].LatDD);
 		Serial.print(",");
 		Serial.print(targetArr[0].LongDD);
-		Serial.println(")");
+		Serial.println(")");*/
 
 
 
@@ -725,10 +752,10 @@ void loop(void)
 #if TRM_ON
 	// print debug information to Serial Terminal
 	//Serial.println(cstr);
-	Serial.print("Heading: ");
+	/*Serial.print("Heading: ");
 	Serial.print(heading);
 	Serial.print(" | ");
 	Serial.print("Distance: ");
-	Serial.println(distance);
+	Serial.println(distance);*/
 #endif	
 }
