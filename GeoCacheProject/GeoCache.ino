@@ -500,42 +500,42 @@ void setup(void)
 void UpdateCompass(uint32_t degree, uint8_t wait)
 {
 	//Make  a certain Light red based on degree
-	if (degree > 337 || degree < 23)
+	if (degree > 60 && degree < 121)
 		strip.setPixelColor(22, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(22, strip.Color(0, 0, 255));
 
-	if (degree > 22 && degree < 68)
+	if (degree > 120 && degree < 181)
 		strip.setPixelColor(23, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(23, strip.Color(0, 0, 255));
 
-	if (degree > 67 && degree < 113)
-		strip.setPixelColor(31, strip.Color(255, 0, 0));
-	else
-		strip.setPixelColor(31, strip.Color(0, 0, 255));
+//	if (degree > 67 && degree < 113)
+//		strip.setPixelColor(31, strip.Color(255, 0, 0));
+//	else
+//		strip.setPixelColor(31, strip.Color(0, 0, 255));
 
-	if (degree > 112 && degree < 158)
+	if (degree < 0 && degree > -61)
 		strip.setPixelColor(39, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(39, strip.Color(0, 0, 255));
 
-	if (degree > 157 && degree < 203)
+	if (degree < -60 && degree > -121)
 		strip.setPixelColor(38, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(38, strip.Color(0, 0, 255));
 
-	if (degree > 202 && degree < 248)
+	if (degree < -120 && degree > -181)
 		strip.setPixelColor(37, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(37, strip.Color(0, 0, 255));
 
-	if (degree > 247 && degree < 293)
-		strip.setPixelColor(29, strip.Color(255, 0, 0));
-	else
-		strip.setPixelColor(29, strip.Color(0, 0, 255));
+//	if (degree > 247 && degree < 293)
+//		strip.setPixelColor(29, strip.Color(255, 0, 0));
+//	else
+//		strip.setPixelColor(29, strip.Color(0, 0, 255));
 
-	if (degree > 292 && degree < 338)
+	if (degree > -1 && degree < 61)
 		strip.setPixelColor(21, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(21, strip.Color(0, 0, 255));
