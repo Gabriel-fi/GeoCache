@@ -191,9 +191,10 @@ float degMin2DecDeg(char *cind, char *ccor)
 
 	if (*cind == 'S' || *cind == 'W')
 		result = result * -1;
-
-	else if (*cind == 'N' || *cind == 'E' && result < 0)
-		result = result * -1;
+	
+	//else if (*cind == 'N' || *cind == 'E' && result < 0)
+		//result = result * -1;
+	
 	
 	//Serial.print("Conversion: ");
 	//Serial.print(DD);
@@ -273,6 +274,11 @@ float calcBearing(float flat1, float flon1, float flat2, float flon2)
 	float x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
 
 	float bearing = atan2(y, x) * 180 / PI;
+
+	if (bearing < -180)
+		bearing += 180;
+	else if (bearing > 180)
+		bearing -= 180;
 	
 	//float bearing = 0.0;
 	//// add code here
@@ -473,10 +479,10 @@ void setup(void)
 	targetArr[0].targetLong = tarLong;
 
 	//Gabe -> TARGET FOR TESTING //28.573769, -81.305332
-	//targetArr[0].LatDD = 28.596715f;
-	//targetArr[0].LongDD = -targetArr[0].LatDD = 2881.304839f;
-	targetArr[0].LatDD = 28.573769;
-	targetArr[0].LongDD = -81.305332;
+	targetArr[0].LatDD = 28.595738f;
+	targetArr[0].LongDD = -81.304396f;
+	//targetArr[0].LatDD = 28.573769;
+	//targetArr[0].LongDD = -81.305332;
 }
 
 
@@ -490,52 +496,52 @@ void setup(void)
 //Takes in a degree and wait time. It uses that degree to update which light on the "Compass" to turn red. A.K.A Point us in the right direction;
 //Wait time is irrelevant currently, May take out in future;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void UpdateCompass(uint32_t degree, uint8_t wait)
+void UpdateCompass(float degree, uint8_t wait)
 {
+
 	//Make  a certain Light red based on degree
-	if (degree > 337 || degree < 23)
+	if ((degree <= -1 && degree >= -22.5f) || (degree <= 22.5f && degree >= 0))
 		strip.setPixelColor(22, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(22, strip.Color(0, 0, 255));
 
-	if (degree > 22 && degree < 68)
+	if (degree >= 22.6f && degree <= 67.5f)
 		strip.setPixelColor(23, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(23, strip.Color(0, 0, 255));
 
-	if (degree > 67 && degree < 113)
+	if (degree > 67.6f && degree <= 112.5f)
 		strip.setPixelColor(31, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(31, strip.Color(0, 0, 255));
 
-	if (degree > 112 && degree < 158)
+	if (degree >= 112.6f && degree <= 157.5f)
 		strip.setPixelColor(39, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(39, strip.Color(0, 0, 255));
 
-	if (degree > 157 && degree < 203)
+	if ((degree >= 157.6f && degree <= 180.0f) || (degree >= -180.0f && degree <= -157.6f))
 		strip.setPixelColor(38, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(38, strip.Color(0, 0, 255));
 
-	if (degree > 202 && degree < 248)
+	if (degree >= -157.5f && degree <= -112.6f)
 		strip.setPixelColor(37, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(37, strip.Color(0, 0, 255));
 
-	if (degree > 247 && degree < 293)
+	if (degree >= -112.5 && degree <= -67.6f)
 		strip.setPixelColor(29, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(29, strip.Color(0, 0, 255));
 
-	if (degree > 292 && degree < 338)
+	if (degree >= -67.5 && degree <= -22.5f)
 		strip.setPixelColor(21, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(21, strip.Color(0, 0, 255));
 	strip.show();
 	delay(wait * 2);
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //UpdateDistance() --> TJay
 //Takes in a distance and wait time. It uses that distance to update the 31 lights that represent how close or far we are from the target;
@@ -689,11 +695,11 @@ void loop(void)
 		}
 		
 		// calculated destination heading
-		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), 
-			targetArr[0].LatDD,targetArr[0].LongDD) - atof(courseOverGround);
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude),
+			targetArr[0].LatDD, targetArr[0].LongDD) - atof(courseOverGround);
 		// calculated destination distance
 		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
-		
+		/*
 		Serial.print("CalcBearing(");
 		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
 		Serial.print(",");
@@ -712,6 +718,14 @@ void loop(void)
 		Serial.print(",");
 		Serial.print(targetArr[0].LongDD);
 		Serial.println(")");
+		*/
+		Serial.print("Course ground:");
+		Serial.println(courseOverGround);
+		Serial.print("Vars for heading: ");
+		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
+		Serial.print(",");
+		Serial.println(degMin2DecDeg(E_W_indicator, longitude));
+
 
 #if SDC_ON
 		// write current position to SecureDigital then flush
