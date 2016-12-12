@@ -190,7 +190,7 @@ float degMin2DecDeg(char *cind, char *ccor)
 	float result = (float)(DD + MMMM / 60.0);
 
 	if (*cind == 'S' || *cind == 'W')
-		result = result * -1;
+		result = result * -1.0f;
 	
 	//else if (*cind == 'N' || *cind == 'E' && result < 0)
 		//result = result * -1;
@@ -275,10 +275,10 @@ float calcBearing(float flat1, float flon1, float flat2, float flon2)
 
 	float bearing = atan2(y, x) * 180 / PI;
 
-	if (bearing < -180)
-		bearing += 180;
-	else if (bearing > 180)
-		bearing -= 180;
+	if (bearing < 0)
+		bearing += 360;
+	else if (bearing > 360)
+		bearing -= 360;
 	
 	//float bearing = 0.0;
 	//// add code here
