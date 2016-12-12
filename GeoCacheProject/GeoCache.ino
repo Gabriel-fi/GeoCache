@@ -689,7 +689,8 @@ void loop(void)
 		}
 		
 		// calculated destination heading
-		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD,targetArr[0].LongDD);
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), 
+			targetArr[0].LatDD,targetArr[0].LongDD) - atof(courseOverGround);
 		// calculated destination distance
 		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
 		
