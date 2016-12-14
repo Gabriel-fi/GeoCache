@@ -764,9 +764,9 @@ void loop(void)
 #if SDC_ON
 		// write current position to SecureDigital then flush
 		//ourFIle.write('T');
-		ourFIle.print(latitude);
+		ourFIle.print(degMin2DecDeg(E_W_indicator, longitude));
 		ourFIle.print(",");
-		ourFIle.print(longitude);
+		ourFIle.print(degMin2DecDeg(N_S_indicator, latitude));
 		ourFIle.print(",");
 		ourFIle.print(heading);
 		ourFIle.print(".");
