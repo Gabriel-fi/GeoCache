@@ -190,7 +190,7 @@ float degMin2DecDeg(char *cind, char *ccor)
 	float result = (float)(DD + MMMM / 60.0);
 
 	if (*cind == 'S' || *cind == 'W')
-		result = result * -1;
+		result = result * -1.0f;
 	
 	//else if (*cind == 'N' || *cind == 'E' && result < 0)
 		//result = result * -1;
@@ -270,15 +270,10 @@ float calcBearing(float flat1, float flon1, float flat2, float flon2)
 	double convertedLong2 = flon2*DEG_2_RAD;
 
 
-	float y = sin(convertedLong2 - convertedLong1)*cos(convertedLat2);
-	float x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
+	double y = sin(convertedLong2 - convertedLong1)*cos(convertedLat2);
+	double x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
 
 	float bearing = atan2(y, x) * 180 / PI;
-
-	if (bearing < -180)
-		bearing += 180;
-	else if (bearing > 180)
-		bearing -= 180;
 	
 	//float bearing = 0.0;
 	//// add code here
@@ -697,6 +692,10 @@ void loop(void)
 		// calculated destination heading
 		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude),
 			targetArr[0].LatDD, targetArr[0].LongDD) - atof(courseOverGround);
+		if (heading < 0)
+			heading += 360.0f;
+		else if (heading > 360)
+			heading -= 360.0f;
 		// calculated destination distance
 		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
 		/*
