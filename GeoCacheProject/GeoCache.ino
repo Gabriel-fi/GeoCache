@@ -77,7 +77,6 @@ have NEO_ON, GPS_ON and SDC_ON during the actual GeoCache Flag
 Hunt.
 */
 
-//-TJay- I changed these just to test my display, 1 = on, 0 = off
 #define NEO_ON 1		// NeoPixelShield
 #define TRM_ON 1		// SerialTerminal
 #define SDC_ON 0		// SecureDigital
@@ -184,21 +183,23 @@ float degMin2DecDeg(char *cind, char *ccor)
 
 	//Initialize the location.
 	float f = min;
-	// Get the first two digits by turning f into an integer, then doing an integer divide by 100;
-	// firsttowdigits should be 77 at this point.
-	int DD = ((int)f) / 100; //This assumes that f < 10000.
+	
+	int DD = ((int)f) / 100; 
 	float MMMM = f - (float)(DD * 100);
-	float theFinalAnswer = (float)(DD + MMMM / 60.0);
+	float result = (float)(DD + MMMM / 60.0);
 
 	if (*cind == 'S' || *cind == 'W')
-		theFinalAnswer = theFinalAnswer * -1;
+		result = result * -1;
+
+	else if (*cind == 'N' || *cind == 'E' && result < 0)
+		result = result * -1;
 	
 	//Serial.print("Conversion: ");
 	//Serial.print(DD);
 	//Serial.print(" | ");
 	//Serial.println(MMMM);
 
-	return (theFinalAnswer);
+	return (result);
 }
 
 /**************************************************
@@ -218,8 +219,8 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
-	/* OR
-	float radius = 6371;
+	
+	/*float radius = 6371;
 	float l1 = radians(flat1);
 	float l2 = radians(flat2);
 	float dlat = radians(flat2 - flat1);
@@ -231,7 +232,6 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 
 	return dist;*/
 
-
 	float dlon, dlat, a, c;
 	float dist = 0.0;
 	dlon = radians(flon2 - flon1);
@@ -242,31 +242,9 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 	dist = 20925656.2 * c;  //radius of the earth (6378140 meters) in feet 20925656.2
 	
 	return((float)dist + 0.5);
+	
 
-	/*float dist = 0.0;
-	// add code here
-	float distance2 = 0.0;
-	float diflat = 0.0;
-	float diflon = 0.0;
-
-	//Calculations
-	diflat = radians(flat2 - flat1);
-	flat1 = radians(flat1);
-	flat2 = radians(flat2);
-	diflon = radians(flon2 - flon1);
-
-	dist = (sin(diflat / 2.0) * sin(diflat / 2.0));
-	distance2 = cos(flat1);
-	distance2 *= cos(flat2);
-	distance2 *= sin(diflon / 2.0);
-	distance2 *= sin(diflon / 2.0);
-	dist += distance2;
-
-	dist = (2 * atan2(sqrt(dist), sqrt(1.0 - dist)));
-
-	Serial.println("Test");
-
-	return(dist);*/
+	
 }
 
 /**************************************************
@@ -281,22 +259,34 @@ flat2, flon2 = second latitude and longitude coordinate in decimal degrees
 Return:
 angle in degrees from magnetic north
 **************************************************/
+static double DEG_2_RAD = PI / 180;
 float calcBearing(float flat1, float flon1, float flat2, float flon2)
 {
-	float bearing = 0.0;
-	// add code here
-	float calc = 0.0;
+	double convertedLat1 = flat1*DEG_2_RAD;
+	double convertedLat2 = flat2*DEG_2_RAD;
+	double convertedLong1 = flon1*DEG_2_RAD;
+	double convertedLong2 = flon2*DEG_2_RAD;
 
-	float x = 69.1 * (flat2 - flat1);
-	float y = 69.1 * (flon2 - flon1) * cos(flat1 / 57.3);
 
-	calc = atan2(y, x);
-	bearing = degrees(calc);
+	float y = sin(convertedLong2 - convertedLong1)*cos(convertedLat2);
+	float x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
 
-	if (bearing <= 1)
-		bearing = 360 + bearing;
+	float bearing = atan2(y, x) * 180 / PI;
+	
+	//float bearing = 0.0;
+	//// add code here
+	//float calc = 0.0;
 
-	return(bearing);
+	//float x = 69.1 * (flat2 - flat1);
+	//float y = 69.1 * (flon2 - flon1) * cos(flat1 / 57.3);
+
+	//calc = atan2(y, x);
+	//bearing = degrees(calc);
+
+	//if (bearing <= 1)
+	//	bearing = 360 + bearing;
+
+	//return(bearing);
 }
 
 /*************************************************
@@ -482,8 +472,10 @@ void setup(void)
 	targetArr[0].targetLong = tarLong;
 
 	//Gabe -> TARGET FOR TESTING //28.573769, -81.305332
-	targetArr[0].LatDD = 28.596715f;
-	targetArr[0].LongDD = -81.304839f;
+	//targetArr[0].LatDD = 28.596715f;
+	//targetArr[0].LongDD = -targetArr[0].LatDD = 2881.304839f;
+	targetArr[0].LatDD = 28.573769;
+	targetArr[0].LongDD = -81.305332;
 }
 
 
@@ -699,8 +691,8 @@ void loop(void)
 		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD,targetArr[0].LongDD);
 		// calculated destination distance
 		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
-
-		/*Serial.print("CalcBearing(");
+		
+		Serial.print("CalcBearing(");
 		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
 		Serial.print(",");
 		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
@@ -717,9 +709,7 @@ void loop(void)
 		Serial.print(targetArr[0].LatDD);
 		Serial.print(",");
 		Serial.print(targetArr[0].LongDD);
-		Serial.println(")");*/
-
-
+		Serial.println(")");
 
 #if SDC_ON
 		// write current position to SecureDigital then flush
@@ -747,10 +737,10 @@ void loop(void)
 #if TRM_ON
 	// print debug information to Serial Terminal
 	//Serial.println(cstr);
-	/*Serial.print("Heading: ");
+	Serial.print("Heading: ");
 	Serial.print(heading);
 	Serial.print(" | ");
 	Serial.print("Distance: ");
-	Serial.println(distance);*/
+	Serial.println(distance);
 #endif	
 }
