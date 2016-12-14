@@ -79,7 +79,7 @@ Hunt.
 
 #define NEO_ON 1		// NeoPixelShield
 #define TRM_ON 1		// SerialTerminal
-#define SDC_ON 0		// SecureDigital
+#define SDC_ON 1		// SecureDigital
 #define GPS_ON 1		// Live GPS Message (off = simulated)
 #define BrightnessPin A0
 
@@ -183,17 +183,18 @@ float degMin2DecDeg(char *cind, char *ccor)
 
 	//Initialize the location.
 	float f = min;
-	
-	int DD = ((int)f) / 100; 
+
+	int DD = ((int)f) / 100;
 	float MMMM = f - (float)(DD * 100);
 	float result = (float)(DD + MMMM / 60.0);
 
 	if (*cind == 'S' || *cind == 'W')
-		result = result * -1;
+		result = result * -1.0f;
 
-	else if (*cind == 'N' || *cind == 'E' && result < 0)
-		result = result * -1;
-	
+	//else if (*cind == 'N' || *cind == 'E' && result < 0)
+		//result = result * -1;
+
+
 	//Serial.print("Conversion: ");
 	//Serial.print(DD);
 	//Serial.print(" | ");
@@ -219,7 +220,7 @@ distance in feet (3959 earth radius in miles * 5280 feet per mile)
 **************************************************/
 float calcDistance(float flat1, float flon1, float flat2, float flon2)
 {
-	
+
 	/*float radius = 6371;
 	float l1 = radians(flat1);
 	float l2 = radians(flat2);
@@ -240,11 +241,11 @@ float calcDistance(float flat1, float flon1, float flat2, float flon2)
 	c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
 	dist = 20925656.2 * c;  //radius of the earth (6378140 meters) in feet 20925656.2
-	
-	return((float)dist + 0.5);
-	
 
-	
+	return((float)dist + 0.5);
+
+
+
 }
 
 /**************************************************
@@ -268,11 +269,11 @@ float calcBearing(float flat1, float flon1, float flat2, float flon2)
 	double convertedLong2 = flon2*DEG_2_RAD;
 
 
-	float y = sin(convertedLong2 - convertedLong1)*cos(convertedLat2);
-	float x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
+	double y = sin(convertedLong2 - convertedLong1)*cos(convertedLat2);
+	double x = cos(convertedLat1)*sin(convertedLat2) - sin(convertedLat1)*cos(convertedLat2)*cos(convertedLong2 - convertedLong1);
 
 	float bearing = atan2(y, x) * 180 / PI;
-	
+
 	//float bearing = 0.0;
 	//// add code here
 	//float calc = 0.0;
@@ -472,10 +473,16 @@ void setup(void)
 	targetArr[0].targetLong = tarLong;
 
 	//Gabe -> TARGET FOR TESTING //28.573769, -81.305332
-	//targetArr[0].LatDD = 28.596715f;
-	//targetArr[0].LongDD = -targetArr[0].LatDD = 2881.304839f;
-	targetArr[0].LatDD = 28.573769;
-	targetArr[0].LongDD = -81.305332;
+	//targetArr[0].LatDD = 28.595738f; //FS Live
+	//targetArr[0].LongDD = -81.304396f;
+	//targetArr[1].LatDD = 28.573769f; //Home
+	//targetArr[1].LongDD = -81.305332f;
+	targetArr[0].LatDD = 28.593396f; //Wendy's
+	targetArr[0].LongDD = -81.306210f;
+	//targetArr[3].LatDD = 00.00f; //Buffalo Wings yum
+	//targetArr[3].LongDD = 00.00f;
+	//targetArr[3].LatDD = 28.594444f; //Buffalo Wings yum
+	//targetArr[3].LongDD = -81.306139f;
 }
 
 
@@ -489,52 +496,52 @@ void setup(void)
 //Takes in a degree and wait time. It uses that degree to update which light on the "Compass" to turn red. A.K.A Point us in the right direction;
 //Wait time is irrelevant currently, May take out in future;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void UpdateCompass(uint32_t degree, uint8_t wait)
+void UpdateCompass(float degree, uint8_t wait)
 {
+
 	//Make  a certain Light red based on degree
-	if (degree > 337 || degree < 23)
+	if ((degree >= 337.5 && degree <= 360.0f) || (degree <= 22.5f && degree >= 0))
 		strip.setPixelColor(22, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(22, strip.Color(0, 0, 255));
 
-	if (degree > 22 && degree < 68)
+	if (degree >= 22.6f && degree <= 67.5f)
 		strip.setPixelColor(23, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(23, strip.Color(0, 0, 255));
 
-	if (degree > 67 && degree < 113)
+	if (degree > 67.6f && degree <= 112.5f)
 		strip.setPixelColor(31, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(31, strip.Color(0, 0, 255));
 
-	if (degree > 112 && degree < 158)
+	if (degree >= 112.6f && degree <= 157.5f)
 		strip.setPixelColor(39, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(39, strip.Color(0, 0, 255));
 
-	if (degree > 157 && degree < 203)
+	if ((degree >= 157.6f && degree <= 202.5f))//|| (degree >= -180.0f && degree <= -157.6f))
 		strip.setPixelColor(38, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(38, strip.Color(0, 0, 255));
 
-	if (degree > 202 && degree < 248)
+	if (degree >= 202.6f && degree <= 247.5f)
 		strip.setPixelColor(37, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(37, strip.Color(0, 0, 255));
 
-	if (degree > 247 && degree < 293)
+	if (degree >= 247.6 && degree <= 292.5f)
 		strip.setPixelColor(29, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(29, strip.Color(0, 0, 255));
 
-	if (degree > 292 && degree < 338)
+	if (degree >= 292.6 && degree <= 337.5f)
 		strip.setPixelColor(21, strip.Color(255, 0, 0));
 	else
 		strip.setPixelColor(21, strip.Color(0, 0, 255));
 	strip.show();
 	delay(wait * 2);
 }
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //UpdateDistance() --> TJay
 //Takes in a distance and wait time. It uses that distance to update the 31 lights that represent how close or far we are from the target;
@@ -644,13 +651,12 @@ void loop(void)
 {
 
 	// if button pressed, set new target
-	if (digitalRead(2) == 0/* && timestamp < millis()*/)
+	if (digitalRead(2) == 0)
 	{
 		if (target < 4)
 			target++;
 		else
 			target = 0;
-		//timestamp = millis() + 200;
 	}
 	// returns with message once a second
 	getGPSMessage();
@@ -686,30 +692,55 @@ void loop(void)
 			Buffer = strtok(NULL, ",");
 			courseOverGround = strtok(NULL, ",");
 		}
-		
+
 		// calculated destination heading
-		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD,targetArr[0].LongDD);
-		// calculated destination distance
-		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[0].LatDD, targetArr[0].LongDD);
-		
-		Serial.print("CalcBearing(");
+		/*static uint32_t timestamp = 0;
+
+		if (timestamp < millis())
+		{*/
+		heading = calcBearing(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude),
+			targetArr[target].LatDD, targetArr[target].LongDD) - atof(courseOverGround);
+		if (heading < 0)
+			heading += 360.0f;
+		else if (heading > 360)
+			heading -= 360.0f;
+
+		distance = calcDistance(degMin2DecDeg(N_S_indicator, latitude), degMin2DecDeg(E_W_indicator, longitude), targetArr[target].LatDD, targetArr[target].LongDD);
+		//timestamp = millis() + 5000;
+	//}
+	// calculated destination distance
+	/*
+	Serial.print("CalcBearing(");
+	Serial.print(degMin2DecDeg(N_S_indicator, latitude));
+	Serial.print(",");
+	Serial.print(degMin2DecDeg(E_W_indicator, longitude));
+	Serial.print(",");
+	Serial.print(targetArr[0].LatDD);
+	Serial.print(",");
+	Serial.print(targetArr[0].LongDD);
+	Serial.println(")");
+	Serial.print("CalcDistance(");
+	Serial.print(degMin2DecDeg(N_S_indicator, latitude));
+	Serial.print(",");
+	Serial.print(degMin2DecDeg(E_W_indicator, longitude));
+	Serial.print(",");
+	Serial.print(targetArr[0].LatDD);
+	Serial.print(",");
+	Serial.print(targetArr[0].LongDD);
+	Serial.println(")");
+	*/
+		Serial.print("Course ground:");
+		Serial.println(courseOverGround);
+		/*Serial.print("Vars for heading: ");
 		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
 		Serial.print(",");
-		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
+		Serial.println(degMin2DecDeg(E_W_indicator, longitude));*/
+		Serial.print("TargetLat:");
+		Serial.print(targetArr[target].LatDD);
 		Serial.print(",");
-		Serial.print(targetArr[0].LatDD);
-		Serial.print(",");
-		Serial.print(targetArr[0].LongDD);
-		Serial.println(")");
-		Serial.print("CalcDistance(");
-		Serial.print(degMin2DecDeg(N_S_indicator, latitude));
-		Serial.print(",");
-		Serial.print(degMin2DecDeg(E_W_indicator, longitude));
-		Serial.print(",");
-		Serial.print(targetArr[0].LatDD);
-		Serial.print(",");
-		Serial.print(targetArr[0].LongDD);
-		Serial.println(")");
+		Serial.print("TargetLong:");
+		Serial.println(targetArr[target].LongDD);
+
 
 #if SDC_ON
 		// write current position to SecureDigital then flush
@@ -717,7 +748,7 @@ void loop(void)
 		ourFIle.print(latitude);
 		ourFIle.print(",");
 		ourFIle.print(longitude);
-		ourFIle.print(",");rt
+		ourFIle.print(",");
 		ourFIle.print(heading);
 		ourFIle.print(".");
 		ourFIle.println(distance);
@@ -738,9 +769,9 @@ void loop(void)
 	// print debug information to Serial Terminal
 	//Serial.println(cstr);
 	Serial.print("Heading: ");
-	Serial.print(heading);
-	Serial.print(" | ");
+	Serial.println(heading);
+	/*Serial.print(" | ");
 	Serial.print("Distance: ");
-	Serial.println(distance);
+	Serial.println(distance);*/
 #endif	
 }
